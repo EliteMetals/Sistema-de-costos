@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Calculadora de Negociación - Por Material</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --primary-light: #34495e;
+            --primary-dark: #1a2530;
+            --accent: #e74c3c;
+            --accent-light: #ec7063;
+            --success: #27ae60;
+            --success-dark: #219653;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --gray-light: #f5f7fa;
+            --gray: #e4e7ed;
+            --dark: #2c3e50;
+            --text: #2d3436;
+            --safe-area-inset-top: env(safe-area-inset-top);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 0;
+            min-height: 100vh;
+            padding-top: var(--safe-area-inset-top);
+            padding-bottom: var(--safe-area-inset-bottom);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+        
+        header p {
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 0.95rem;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-top: 15px;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+        
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .input-section, .result-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            padding: 20px;
+            border: none;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        h2 {
+            font-size: 1.3rem;
+            margin-bottom: 18px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--gray);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-light);
+            font-size: 0.95rem;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--gray);
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: var(--transition);
+            -webkit-appearance: none;
+            appearance: none;
+            font-weight: 500;
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 18px;
+            padding-right: 50px;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .destination-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .destination-card {
+            border: 1px solid var(--gray);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .destination-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .destination-card.selected {
+            border: 2px solid var(--accent);
+            background-color: rgba(231, 76, 60, 0.05);
+        }
+        
+        .destination-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background-color: var(--gray-light);
+            cursor: pointer;
+        }
+        
+        .destination-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+        
+        .destination-cost {
+            font-weight: 700;
+            color: var(--accent);
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: rgba(231, 76, 60, 0.1);
+            transition: var(--transition);
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .destination-cost:hover {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        
+        .destination-details {
+            padding: 16px;
+            border-top: 1px solid var(--gray);
+        }
+        
+        .providers-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .provider-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .provider-tag {
+            background-color: rgba(44, 62, 80, 0.1);
+            border: 1px solid rgba(44, 62, 80, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+        
+        .provider-tag:hover {
+            background-color: rgba(44, 62, 80, 0.15);
+        }
+        
+        .destinations-table-container {
+            margin-top: 20px;
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid var(--gray);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            -webkit-overflow-scrolling: touch;
+            display: block;
+        }
+        
+        .destinations-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .destinations-table th,
+        .destinations-table td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray);
+        }
+        
+        .destinations-table th {
+            background-color: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            z-index: 10;
+        }
+        
+        .destinations-table tr:nth-child(even) {
+            background-color: var(--gray-light);
+        }
+        
+        .destinations-table tr {
+            transition: var(--transition);
+        }
+        
+        .destinations-table tr:hover {
+            background-color: rgba(231, 76, 60, 0.08);
+            cursor: pointer;
+        }
+        
+        .destinations-table tr.selected {
+            background-color: rgba(231, 76, 60, 0.12);
+            font-weight: 600;
+            position: relative;
+        }
+        
+        .destinations-table tr.selected::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--accent);
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal-header {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .provider-costs {
+            margin-bottom: 24px;
+            border: 1px solid var(--gray);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .provider-header {
+            background-color: var(--primary-light);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .cost-details {
+            padding: 20px;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        
+        .cost-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cost-label {
+            font-weight: 500;
+            color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cost-value {
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+        }
+        
+        .cost-total {
+            background-color: rgba(39, 174, 96, 0.1);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--success);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 24px 20px;
+            color: white;
+            background: var(--primary-dark);
+            border-radius: 0 0 16px 16px;
+            font-size: 0.85rem;
+            padding-bottom: calc(20px + var(--safe-area-inset-bottom));
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 8px;
+                border-radius: 14px;
+            }
+            
+            .content {
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            header {
+                padding: 20px 16px;
+                border-radius: 14px 14px 0 0;
+            }
+            
+            header h1 {
+                font-size: 1.4rem;
+            }
+            
+            header p {
+                font-size: 0.9rem;
+            }
+            
+            .card {
+                padding: 16px;
+                border-radius: 10px;
+            }
+            
+            h2 {
+                font-size: 1.2rem;
+                margin-bottom: 16px;
+            }
+            
+            select, input {
+                font-size: 16px;
+                padding: 16px 14px;
+            }
+            
+            select {
+                background-position: right 14px center;
+                padding-right: 46px;
+            }
+            
+            .destinations-table-container {
+                display: none;
+            }
+            
+            .destination-cards {
+                display: flex;
+            }
+            
+            .destination-header {
+                padding: 14px;
+            }
+            
+            .destination-name {
+                font-size: 1rem;
+            }
+            
+            .destination-cost {
+                min-width: 110px;
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .destination-details {
+                padding: 14px;
+            }
+            
+            .provider-list {
+                gap: 6px;
+            }
+            
+            .provider-tag {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
+            
+            .modal {
+                max-height: 85vh;
+                border-radius: 14px;
+            }
+            
+            .modal-header {
+                padding: 16px;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+            
+            .provider-header {
+                padding: 14px 16px;
+            }
+            
+            .cost-details {
+                padding: 16px;
+            }
+            
+            .cost-item {
+                padding: 10px 0;
+                flex-wrap: wrap;
+            }
+            
+            .cost-label, .cost-value {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .destination-cards {
+                display: none;
+            }
+            
+            .destinations-table-container {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                background: var(--primary);
+            }
+            
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            header {
+                border-radius: 0;
+                padding: 18px 14px;
+            }
+            
+            header h1 {
+                font-size: 1.3rem;
+                flex-direction: row;
+                gap: 10px;
+            }
+            
+            .content {
+                padding: 14px;
+            }
+            
+            .destination-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .destination-cost {
+                align-self: flex-end;
+                min-width: 100px;
+                padding: 6px 10px;
+                font-size: 0.85rem;
+            }
+            
+            .provider-list {
+                flex-direction: column;
+                gap: 6px;
+            }
+            
+            .provider-tag {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .modal-overlay {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 40px;
+            }
+            
+            .modal {
+                max-height: 80vh;
+            }
+            
+            .modal-header h3 {
+                font-size: 1.1rem;
+            }
+            
+            .cost-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+                padding: 8px 0;
+            }
+            
+            .cost-value {
+                margin-left: 28px;
+            }
+            
+            .footer {
+                border-radius: 0;
+                padding: 20px 16px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            select, input, .destination-cost, .modal-close {
+                min-height: 44px;
+            }
+            
+            select:focus, input:focus {
+                box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.3);
+            }
+        }
+        
+        @supports(padding: max(0px)) {
+            body, header, .footer {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+            }
+            
+            .container {
+                margin-left: max(0px, env(safe-area-inset-left));
+                margin-right: max(0px, env(safe-area-inset-right));
+            }
+            
+            @media (max-width: 480px) {
+                .container {
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+            }
+        }
+        
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0,
+                rgba(255, 255, 255, 0.2) 20%,
+                rgba(255, 255, 255, 0.5) 60%,
+                rgba(255, 255, 255, 0)
+            );
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .destinations-table-container::-webkit-scrollbar,
+        .modal::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .destinations-table-container::-webkit-scrollbar-track,
+        .modal::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .destinations-table-container::-webkit-scrollbar-thumb,
+        .modal::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        .destinations-table-container::-webkit-scrollbar-thumb:hover,
+        .modal::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Calculadora de Negociación</h1>
+            <p>Herramienta para Elite Metals Group Corp</p>
+            <a href="../" class="back-button"><i class="fas fa-arrow-left"></i> Volver a la página principal</a>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <div class="card">
+                    <h2><i class="fas fa-cogs"></i> Parámetros de Negociación</h2>
+                    
+                    <div class="form-group">
+                        <label for="material"><i class="fas fa-box-open"></i> Tipo de Material</label>
+                        <select id="material"></select>
+                    </div>
+                    
+                    <div id="destinationsContainer" class="hidden">
+                        <h3><i class="fas fa-map-marked-alt"></i> Destinos Disponibles</h3>
+                        
+                        <div id="destinationCards" class="destination-cards">
+                            <!-- Las tarjetas se llenarán dinámicamente -->
+                        </div>
+                        
+                        <div class="destinations-table-container">
+                            <table class="destinations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Destino</th>
+                                        <th>Proveedores</th>
+                                        <th>Costos (USD)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="destinationsTableBody">
+                                    <!-- Los destinos se llenarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="selectedProvider">
+                    <input type="hidden" id="selectedDestination">
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Calculadora de Negociación &copy; 2025 - Derechos reservados para Elite Metals</p>
+        </div>
+    </div>
+    
+    <div id="costBreakdownModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Desglose de Costos</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4 id="modalDestinationTitle"></h4>
+                <div id="costBreakdownContainer">
+                    <!-- Los datos de costos se llenarán dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<script id="csv-data" type="text/csv">
+PROVEEDOR;MATERIAL;TAMAÑO CONTENEDOR;FLETE MARITIMO;SALIDA;BOLIPUERTO;INTER SHIP;COMISION;ORIGEN Y PUERTO;PAIS Y PUERTO DESTINO;ACARREO;KCI;ARANCEL;FLETE MIAMI
+COMERCIALIZADORA NS;ACERO;40HC;300;2050;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+MUNDO ACERO;ACERO;40HC;300;2050;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+COMERCIALIZADORA NS;ACERO;40HC;300;2050;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+THE COMPANY;ACR;40HC;300;3550;500;55;50;VENEZUELA, LA GUAIRA;Laem Chabang, Tailandia ;;;;
+MAB COMPRESSOR;ACR;40HC;-;-;-;-;-;ESTADOS UNIDOS, MIAMI;Loxley, Estados Unidos;-;-;-;950
+CASABLANCA;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+CASABLANCA;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+CASABLANCA;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+COMERCIALIZADORA NS;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+COMERCIALIZADORA NS;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+COMERCIALIZADORA NS;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+MULTIRECICLAJES;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+MUNDO ACERO;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+MUNDO ACERO;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+MUNDO ACERO;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+RECIPLAST Y VALERIO;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+RECUPERADORA GUARICO;ALUMINIO DURO;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+RECUPERADORA GUARICO;ALUMINIO DURO;40HC;1685;1750;500;55;50;VENEZUELA, LA GUAIRA;Ennore, India;;;;
+RECUPERADORA GUARICO;ALUMINIO DURO;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+CASABLANCA;ALUMINIO T/T;40HC;1160;1750;500;55;50;VENEZUELA, LA GUAIRA;Estambul, Turquia;;;;
+COMERCIALIZADORA NS;ALUMINIO T/T;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+COMERCIALIZADORA NS;ALUMINIO T/T;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+COMERCIALIZADORA NS;ALUMINIO T/T;40HC;945;1750;500;55;50;VENEZUELA, LA GUAIRA;Nhava Sheva, India;;;;
+RECUPERADORA GUARICO;ALUMINIO T/T;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Kaohsiung, Taiwan;;;;
+RECUPERADORA GUARICO;ALUMINIO T/T;40HC;930;1750;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+RECUPERADORA GUARICO;ALUMINIO T/T;40HC;1160;1750;500;55;50;VENEZUELA, LA GUAIRA;Estambul, Turquia;;;;
+CASABLANCA;COBRE;40HC;2432;11500;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;450;1600,00;1950,00
+FURIMETALES;COBRE;40HC;795;11500;500;55;50;VENEZUELA, LA GUAIRA;Gaoming, China;;;;
+FURIMETALES;COBRE;40HC;2432;11500;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;450;1600,00;1950,00
+MULTIRECICLAJES;COBRE;40HC;2432;11500;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1600,00;1650,00
+MUNDO ACERO;COBRE;40HC;2432;11500;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1600,00;1600,00
+VALKAM CAPITAL;EC WIRE;40HC;1000;-;-;950;-;COLOMBIA, BARRANQUILLA;Everglades, Estados Unidos;550;400;3800,00;1700,00
+CASABLANCA;FOOL;40HC;1556;1900;500;55;50;VENEZUELA, LA GUAIRA;Bilbao, España;;;;
+ADRIAN;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+ALLOY METAL;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+CASABLANCA;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+COMERCIALIZADORA NS;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+EL PALMAR;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+FUNDICION;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+JAEM METAL;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+RECIPLAST Y VALERIO;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+RECUPERADORA GUARICO;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+THE COMPANY;HIERRO;20ST;730;1000;500;55;50;VENEZUELA, LA GUAIRA;Mundra, India;;;;
+MUNDO ACERO;PAILAS DE ALUMINIO;20ST;1420;1750;500;55;50;VENEZUELA, LA GUAIRA;Bilbao, España;;;;
+MUNDO METAL;PAILAS DE ALUMINIO;20ST;1420;1750;500;55;50;VENEZUELA, LA GUAIRA;Bilbao, España;;;;
+CASABLANCA;PAILAS DE ALUMINIO;20ST;265;1750;500;55;50;VENEZUELA, LA GUAIRA;Ningbo, China;;;;
+CASABLANCA;PAILAS DE ALUMINIO;20ST;300;1900;500;55;50;VENEZUELA, LA GUAIRA;Laem Chabang, Tailandia ;;;;
+MUNDO METAL;PERFIL ALUM;40HC;2432;1750;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1200,00;1700,00
+CASABLANCA;PERFIL ALUM;40HC;2432;1750;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1200,00;1700,00
+METCO IMPORT;RIELES;20ST;1815;1300;500;55;50;VENEZUELA, LA GUAIRA;Qasim, Pakistan;;;;
+CASABLANCA;RIN DE ALUMINIO;40HC;2432;1750;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1100,00;1100,00
+RECUPERADORA GUARICO;UBC;40HC;2432;1750;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;400;1100,00;1100,00
+COMERCIALIZADORA NS;UBC;40HC;2432;1750;500;55;50;VENEZUELA, LA GUAIRA;Everglades, Estados Unidos;550;450;1100,00;1100,00
+MUNDO METAL;UBC;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Laem Chabang, Tailandia ;;;;
+RECUPERADORA GUARICO;UBC;40HC;300;1750;500;55;50;VENEZUELA, LA GUAIRA;Laem Chabang, Tailandia;;;;
+</script>    
+    <script>
+        // Función para limpiar y normalizar valores
+        function clean(val) {
+            if (!val) return "";
+            return String(val).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim().toUpperCase();
+        }
+        
+        // Función para formatear números con separadores de miles
+        function formatNumber(num) {
+            if (isNaN(num)) return "0";
+            let absNum = Math.abs(num);
+            let parts = absNum.toFixed(2).split('.');
+            let integerPart = parts[0];
+            let decimalPart = parts[1];
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            let formatted = decimalPart === "00" ? integerPart : (integerPart + "," + decimalPart);
+            return (num < 0 ? "-" : "") + formatted;
+        }
+        
+        // Función para convertir valores a números
+        function toNumber(val) {
+            if (typeof val === 'number') return val;
+            if (!val || String(val).trim() === '-' || String(val).trim() === '') return 0;
+            return parseFloat(String(val).replace(/\./g, '').replace(/,/g, '.').replace(/\s/g, '')) || 0;
+        }
+        
+        // Función para eliminar duplicados
+        function removeDuplicates(data) {
+            const seen = new Set();
+            return data.filter(item => {
+                // Crear una clave única basada en proveedor, material y destino
+                const key = `${clean(item.PROVEEDOR)}|${clean(item.MATERIAL)}|${clean(item['PAIS Y PUERTO DESTINO'])}`;
+                
+                // Si ya hemos visto esta combinación, filtrarla
+                if (seen.has(key)) {
+                    return false;
+                }
+                
+                // Si no la hemos visto, agregarla al set y mantener el elemento
+                seen.add(key);
+                return true;
+            });
+        }
+        
+        // Función para calcular costo adicional por proveedor
+        function getAdditionalCost(provider) {
+            const cleanProvider = clean(provider);
+            if (cleanProvider === 'CASABLANCA' || cleanProvider === 'MUNDO METAL') {
+                return 500;
+            } else if (cleanProvider === 'COMERCIALIZADORA NS') {
+                return 250;
+            }
+            return 0;
+        }
+        
+        // Función para limpiar nombres de destinos (eliminar "Puerto de" y "Port")
+        function cleanDestinationName(destination) {
+            if (!destination) return "";
+            return destination
+                .replace(/^(PUERTO DE|PUERTO|PORT)\s+/i, '')
+                .replace(/^DE\s+/i, '')
+                .trim();
+        }
+        
+        // Seleccionar elementos del DOM
+        const selects = {
+            material: document.getElementById('material')
+        };
+        
+        const hiddenInputs = {
+            provider: document.getElementById('selectedProvider'),
+            destination: document.getElementById('selectedDestination')
+        };
+        
+        const destinationsContainer = document.getElementById('destinationsContainer');
+        const destinationsTableBody = document.getElementById('destinationsTableBody');
+        const destinationCards = document.getElementById('destinationCards');
+        
+        // Elementos del modal
+        const costBreakdownModal = document.getElementById('costBreakdownModal');
+        const modalDestinationTitle = document.getElementById('modalDestinationTitle');
+        const costBreakdownContainer = document.getElementById('costBreakdownContainer');
+        const modalCloseButton = document.querySelector('.modal-close');
+        
+        // Variables globales
+        let data = [];
+        let selectedRow = null;
+        let selectedCard = null;
+        let groupedByDestination = {};
+        
+        // Mapeo de nombres de campos a descripciones más legibles
+        const costLabels = {
+            'FLETE MARITIMO': 'Flete Marítimo',
+            'SALIDA': 'Salida',
+            'BOLIPUERTO': 'Bolipuerto',
+            'INTER SHIP': 'Inter Ship',
+            'COMISION': 'Comisión',
+            'ACARREO': 'Acarreo',
+            'KCI': 'KCI',
+            'ARANCEL': 'Arancel',
+            'FLETE MIAMI': 'Flete Miami'
+        };
+        
+        // Iconos para cada tipo de costo
+        const costIcons = {
+            'FLETE MARITIMO': 'fa-ship',
+            'SALIDA': 'fa-anchor',
+            'BOLIPUERTO': 'fa-warehouse',
+            'INTER SHIP': 'fa-exchange-alt',
+            'COMISION': 'fa-hand-holding-usd',
+            'ACARREO': 'fa-truck-loading',
+            'KCI': 'fa-box',
+            'ARANCEL': 'fa-file-invoice-dollar',
+            'FLETE MIAMI': 'fa-ship'
+        };
+        
+        // Funciones auxiliares
+        function fillSelect(select, opciones) {
+            select.innerHTML = '<option value="">-- Seleccione --</option>';
+            opciones.forEach(op => {
+                let option = document.createElement('option');
+                option.value = op;
+                option.textContent = op;
+                select.appendChild(option);
+            });
+        }
+        
+        function uniqueValues(col, arr) {
+            return [...new Set(arr.map(x => clean(x[col])))].filter(Boolean).sort();
+        }
+        
+        // Actualizar base de datos local
+        function updateLocalDB(newData) {
+            // Eliminar duplicados
+            data = removeDuplicates(newData);
+            
+            // Llenar el select de materiales
+            fillSelect(selects.material, uniqueValues('MATERIAL', data));
+        }
+        
+        // Mostrar modal con desglose de costos
+        function showCostBreakdownModal(destination) {
+            if (!groupedByDestination[destination]) return;
+            
+            // Actualizar título del modal
+            modalDestinationTitle.textContent = `Destino: ${destination}`;
+            
+            // Limpiar contenedor
+            costBreakdownContainer.innerHTML = '';
+            
+            // Obtener los items para este destino
+            const items = groupedByDestination[destination].items;
+            
+            // Crear sección para cada proveedor
+            items.forEach(item => {
+                const providerSection = document.createElement('div');
+                providerSection.className = 'provider-costs';
+                
+                // Calcular total incluyendo costo adicional
+                const additionalCost = getAdditionalCost(item.provider);
+                const total = item.totalCost + additionalCost;
+                
+                let costDetailsHTML = '';
+                
+                // Añadir cada costo individual
+                Object.entries(costLabels).forEach(([key, label]) => {
+                    const value = item.itemData[key] || 0;
+                    if (value !== 0) {
+                        costDetailsHTML += `
+                            <div class="cost-item">
+                                <span class="cost-label">
+                                    <i class="fas ${costIcons[key] || 'fa-dollar-sign'}"></i> ${label}
+                                </span>
+                                <span class="cost-value">${formatNumber(value)} USD</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                // Añadir costo adicional si corresponde
+                if (additionalCost > 0) {
+                    costDetailsHTML += `
+                        <div class="cost-item">
+                            <span class="cost-label">
+                                <i class="fas fa-truck-pickup"></i> Recogida
+                            </span>
+                            <span class="cost-value">${formatNumber(additionalCost)} USD</span>
+                        </div>
+                    `;
+                }
+                
+                // Añadir el total
+                costDetailsHTML += `
+                    <div class="cost-total">
+                        <span><i class="fas fa-file-invoice-dollar"></i> TOTAL</span>
+                        <span>${formatNumber(total)} USD</span>
+                    </div>
+                `;
+                
+                providerSection.innerHTML = `
+                    <div class="provider-header">
+                        <span><i class="fas fa-building"></i> ${item.provider}</span>
+                    </div>
+                    <div class="cost-details">
+                        ${costDetailsHTML}
+                    </div>
+                `;
+                
+                costBreakdownContainer.appendChild(providerSection);
+            });
+            
+            // Mostrar el modal
+            costBreakdownModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Cerrar modal
+        function closeCostBreakdownModal() {
+            costBreakdownModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Event listeners para el modal
+        modalCloseButton.addEventListener('click', closeCostBreakdownModal);
+        costBreakdownModal.addEventListener('click', (e) => {
+            if (e.target === costBreakdownModal) {
+                closeCostBreakdownModal();
+            }
+        });
+        
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !costBreakdownModal.classList.contains('hidden')) {
+                closeCostBreakdownModal();
+            }
+        });
+        
+        // Cargar datos CSV al iniciar
+        window.addEventListener('DOMContentLoaded', function() {
+            var csvText = document.getElementById('csv-data').textContent.trim();
+            Papa.parse(csvText, {
+                header: true,
+                delimiter: ";",
+                skipEmptyLines: true,
+                complete: function(res) {
+                    let datosLimpios = res.data.map(row => {
+                        let obj = {};
+                        for (let k in row) {
+                            // Limpiar nombres de columnas y valores
+                            let cleanKey = clean(k);
+                            let value = clean(row[k]);
+                            
+                            // Limpiar nombres de destinos
+                            if (cleanKey === 'PAIS Y PUERTO DESTINO') {
+                                value = cleanDestinationName(value);
+                            }
+                            
+                            obj[cleanKey] = value;
+                        }
+                        
+                        // Convertir campos numéricos
+                        ['FLETE MARITIMO', 'SALIDA', 'BOLIPUERTO', 'INTER SHIP', 'COMISION', 'ACARREO', 'KCI', 'ARANCEL', 'FLETE MIAMI'].forEach(
+                            fld => obj[fld] = toNumber(obj[fld]));
+                        return obj;
+                    });
+                    updateLocalDB(datosLimpios);
+                }
+            });
+        });
+        
+        // Event listener para el cambio de material
+        selects.material.addEventListener('change', function() {
+            const mat = clean(this.value);
+            if (!mat) {
+                destinationsContainer.classList.add('hidden');
+                return;
+            }
+            
+            // Filtrar datos por material seleccionado
+            const filteredData = data.filter(r => r['MATERIAL'] === mat);
+            
+            if (filteredData.length === 0) {
+                destinationsContainer.classList.add('hidden');
+                return;
+            }
+            
+            // Mostrar la tabla de destinos
+            populateDestinationsTable(filteredData);
+            populateDestinationCards(filteredData);
+            destinationsContainer.classList.remove('hidden');
+        });
+        
+        // Función para llenar la tabla de destinos (agrupada por destino) - Para escritorio
+        function populateDestinationsTable(data) {
+            destinationsTableBody.innerHTML = '';
+            
+            // Reiniciar agrupación
+            groupedByDestination = {};
+            
+            data.forEach(item => {
+                const destino = item['PAIS Y PUERTO DESTINO'];
+                if (!destino) return;
+                
+                if (!groupedByDestination[destino]) {
+                    groupedByDestination[destino] = {
+                        providers: [],
+                        items: []
+                    };
+                }
+                
+                // Calcular costo total por contenedor
+                const fleteMaritimo = toNumber(item['FLETE MARITIMO']);
+                const salida = toNumber(item['SALIDA']);
+                const bolipuerto = toNumber(item['BOLIPUERTO']);
+                const interShip = toNumber(item['INTER SHIP']);
+                const comision = toNumber(item['COMISION']);
+                const acarreo = toNumber(item['ACARREO']);
+                const kci = toNumber(item['KCI']);
+                const arancel = toNumber(item['ARANCEL']);
+                const fleteMiami = toNumber(item['FLETE MIAMI']);
+                
+                // Calcular costo base
+                let totalCost = fleteMaritimo + salida + bolipuerto + interShip + comision + acarreo + kci + arancel + fleteMiami;
+                
+                // Solo añadir el proveedor si no existe ya
+                if (!groupedByDestination[destino].providers.includes(item['PROVEEDOR'])) {
+                    groupedByDestination[destino].providers.push(item['PROVEEDOR']);
+                }
+                
+                groupedByDestination[destino].items.push({
+                    provider: item['PROVEEDOR'],
+                    totalCost: totalCost,
+                    itemData: item
+                });
+            });
+            
+            // Ordenar destinos por costo total (de mayor a menor)
+            const sortedDestinations = Object.keys(groupedByDestination).sort((a, b) => {
+                // Obtener el costo máximo para cada destino
+                const maxCostA = Math.max(...groupedByDestination[a].items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                }));
+                
+                const maxCostB = Math.max(...groupedByDestination[b].items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                }));
+                
+                return maxCostB - maxCostA; // Orden descendente
+            });
+            
+            // Crear filas para cada destino
+            sortedDestinations.forEach(destino => {
+                const group = groupedByDestination[destino];
+                
+                // Ordenar proveedores alfabéticamente
+                group.providers.sort();
+                
+                // Calcular costos incluyendo el adicional
+                const costsWithAdditional = group.items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                });
+                
+                const minCost = Math.min(...costsWithAdditional);
+                const maxCost = Math.max(...costsWithAdditional);
+                
+                // Formatear rango de costos
+                let costRange = formatNumber(minCost);
+                if (minCost !== maxCost) {
+                    costRange += " - " + formatNumber(maxCost);
+                }
+                costRange += " USD";
+                
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${destino}</td>
+                    <td>
+                        <div class="provider-list">
+                            ${group.providers.map(provider => 
+                                `<span class="provider-tag">${provider}</span>`
+                            ).join('')}
+                        </div>
+                    </td>
+                    <td class="destination-cost">${costRange}</td>
+                `;
+                
+                // Event listener para seleccionar el destino
+                row.addEventListener('click', () => {
+                    // Quitar selección anterior
+                    if (selectedRow) {
+                        selectedRow.classList.remove('selected');
+                    }
+                    
+                    // Seleccionar esta fila
+                    row.classList.add('selected');
+                    selectedRow = row;
+                    
+                    // Para este destino con múltiples proveedores, seleccionamos el primero
+                    const firstItem = group.items[0];
+                    hiddenInputs.provider.value = firstItem.provider;
+                    hiddenInputs.destination.value = destino;
+                });
+                
+                // Event listener para la celda de costos (mostrar desglose)
+                const costCell = row.querySelector('.destination-cost');
+                costCell.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evitar que se propague el evento de clic de la fila
+                    showCostBreakdownModal(destino);
+                });
+                
+                destinationsTableBody.appendChild(row);
+            });
+        }
+        
+        // Función para llenar las tarjetas de destino (para móviles)
+        function populateDestinationCards(data) {
+            destinationCards.innerHTML = '';
+            
+            // Si ya tenemos los datos agrupados, usarlos
+            if (Object.keys(groupedByDestination).length === 0) {
+                // Si no, procesar los datos
+                data.forEach(item => {
+                    const destino = item['PAIS Y PUERTO DESTINO'];
+                    if (!destino) return;
+                    
+                    if (!groupedByDestination[destino]) {
+                        groupedByDestination[destino] = {
+                            providers: [],
+                            items: []
+                        };
+                    }
+                    
+                    // Calcular costo total por contenedor
+                    const fleteMaritimo = toNumber(item['FLETE MARITIMO']);
+                    const salida = toNumber(item['SALIDA']);
+                    const bolipuerto = toNumber(item['BOLIPUERTO']);
+                    const interShip = toNumber(item['INTER SHIP']);
+                    const comision = toNumber(item['COMISION']);
+                    const acarreo = toNumber(item['ACARREO']);
+                    const kci = toNumber(item['KCI']);
+                    const arancel = toNumber(item['ARANCEL']);
+                    const fleteMiami = toNumber(item['FLETE MIAMI']);
+                    
+                    // Calcular costo base
+                    let totalCost = fleteMaritimo + salida + bolipuerto + interShip + comision + acarreo + kci + arancel + fleteMiami;
+                    
+                    // Solo añadir el proveedor si no existe ya
+                    if (!groupedByDestination[destino].providers.includes(item['PROVEEDOR'])) {
+                        groupedByDestination[destino].providers.push(item['PROVEEDOR']);
+                    }
+                    
+                    groupedByDestination[destino].items.push({
+                        provider: item['PROVEEDOR'],
+                        totalCost: totalCost,
+                        itemData: item
+                    });
+                });
+            }
+            
+            // Ordenar destinos por costo total (de mayor a menor)
+            const sortedDestinations = Object.keys(groupedByDestination).sort((a, b) => {
+                // Obtener el costo máximo para cada destino
+                const maxCostA = Math.max(...groupedByDestination[a].items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                }));
+                
+                const maxCostB = Math.max(...groupedByDestination[b].items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                }));
+                
+                return maxCostB - maxCostA; // Orden descendente
+            });
+            
+            // Crear tarjetas para cada destino
+            sortedDestinations.forEach(destino => {
+                const group = groupedByDestination[destino];
+                
+                // Ordenar proveedores alfabéticamente
+                group.providers.sort();
+                
+                // Calcular costos incluyendo el adicional
+                const costsWithAdditional = group.items.map(item => {
+                    const additionalCost = getAdditionalCost(item.provider);
+                    return item.totalCost + additionalCost;
+                });
+                
+                const minCost = Math.min(...costsWithAdditional);
+                const maxCost = Math.max(...costsWithAdditional);
+                
+                // Formatear rango de costos
+                let costRange = formatNumber(minCost);
+                if (minCost !== maxCost) {
+                    costRange += " - " + formatNumber(maxCost);
+                }
+                costRange += " USD";
+                
+                const card = document.createElement('div');
+                card.className = 'destination-card';
+                
+                card.innerHTML = `
+                    <div class="destination-header">
+                        <div class="destination-name">${destino}</div>
+                        <div class="destination-cost">${costRange}</div>
+                    </div>
+                    <div class="destination-details">
+                        <div class="providers-title">
+                            <i class="fas fa-building"></i> Proveedores:
+                        </div>
+                        <div class="provider-list">
+                            ${group.providers.map(provider => 
+                                `<span class="provider-tag">${provider}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                // Event listener para seleccionar el destino
+                card.addEventListener('click', () => {
+                    // Quitar selección anterior
+                    if (selectedCard) {
+                        selectedCard.classList.remove('selected');
+                    }
+                    
+                    // Seleccionar esta tarjeta
+                    card.classList.add('selected');
+                    selectedCard = card;
+                    
+                    // Para este destino con múltiples proveedores, seleccionamos el primero
+                    const firstItem = group.items[0];
+                    hiddenInputs.provider.value = firstItem.provider;
+                    hiddenInputs.destination.value = destino;
+                });
+                
+                // Event listener para el costo (mostrar desglose)
+                const costElement = card.querySelector('.destination-cost');
+                costElement.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evitar que se propague el evento de clic de la tarjeta
+                    showCostBreakdownModal(destino);
+                });
+                
+                destinationCards.appendChild(card);
+            });
+        }
+        
+        // Prevenir zoom en iOS al enfocar inputs
+        document.addEventListener('touchstart', function() {
+            // Esta función vacía ayuda a mejorar la respuesta táctil
+        }, { passive: true });
+        
+        // Mejorar el comportamiento en dispositivos móviles
+        document.addEventListener('touchmove', function(e) {
+            // Prevenir scroll en elementos modales
+            if (!costBreakdownModal.classList.contains('hidden')) {
+                // Permitir scroll dentro del modal
+                if (!e.target.closest('.modal')) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
